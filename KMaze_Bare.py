@@ -21,7 +21,7 @@ class KMaze_Bare:
         if initPos is None:
             self.agentPos = np.random.randint(low=1,high=N-1,size=K)
         else:
-            self.agentPos = initPos
+            self.agentPos = np.array(initPos)
             
         self.N = N
         self.K = K
@@ -72,9 +72,9 @@ class KMaze_Bare:
         observation = self.agentPos
         
         reward = 0                              # 0 by default
-        info   = None
+        info   = [None]
         done   = False
-        if np.any(self.agentPos <= 0 or self.agentPos >= self.N):
+        if np.any(self.agentPos <= 0) or np.any(self.agentPos >= self.N):
             done = True
             if self.agentPos[self.chosenDim] >= self.N:
                 reward = self.maxReward
