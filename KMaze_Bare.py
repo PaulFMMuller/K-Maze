@@ -19,7 +19,7 @@ class KMaze_Bare:
                 
         np.random.seed(random_seed)
         if initPos is None:
-            self.agentPos = np.random.randint(low=1,high=N-1,size=K)
+            self.agentPos = np.random.randint(low=0,high=N-1,size=K)
         else:
             self.agentPos = np.array(initPos)
             
@@ -55,7 +55,8 @@ class KMaze_Bare:
             for i in range(self.N):
                 outputString += newStrings[i] + '\n'
         else:
-            outputString = 'Sorry, no way to visualize dim >= 3 environments yet ! ;)'
+            outputString = 'Position : {}'.format(self.agentPos)
+            #outputString = 'Sorry, no way to visualize dim >= 3 environments yet ! ;)'
         print(outputString)
         
         
