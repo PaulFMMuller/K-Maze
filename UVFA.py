@@ -68,7 +68,6 @@ class UVFA:
     def predict(self,state,g):
         Phi = self.WNetwork.predict(state)
         Psi = self.HNetwork.predict(g)
-        
         return (self.h(Phi,np.transpose(Psi)))
     
     

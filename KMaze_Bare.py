@@ -80,20 +80,25 @@ class KMaze_Bare:
         
         self.agentPos[actionDim] += actionDir
         observation = self.agentPos
+            
+        reward,done,info = self.evaluateState(self.agentPos,self.N,self.chosenDim,self.maxReward,self.minReward)
         
+        return observation, reward, done, info
+        
+    
+    def evaluateState(self,agentPos,N,goal,maxReward,minReward):
         reward = 0                              # 0 by default
         info   = [None]
         done   = False
-        if np.any(self.agentPos < 0) or np.any(self.agentPos >= self.N):
+        if np.any(agentPos < 0) or np.any(agentPos >= N):
             done = True
-            dim = self.chosenDim // 2
-            pos = self.chosenDim - 2*dim
-            if (self.agentPos[dim] < 0 and pos == 0) or (self.agentPos[dim] >= self.N and pos == 1):
-                reward = self.maxReward
+            dim = goal // 2
+            pos = goal - 2*dim
+            if (agentPos[dim] < 0 and pos == 0) or (agentPos[dim] >= N and pos == 1):
+                reward = maxReward
             else:
-                reward = self.minReward
-            
-        return observation, reward, done, info
+                reward = minReward
+        return reward,done,info
     
     
     # Used at the end of training to find the goal reached.
@@ -105,10 +110,25 @@ class KMaze_Bare:
         if self.agentPos[i] >= self.N:
             K = K+1
         return K
+    
+    
+    def seq2SeqNR(self,actionSequence):
+        K = 2*self.K-1
+        NewSeqs = []
+        for g in range(K):
+            CurrSeq = []
+            for i in range(len(actionSequence)-1):    # Not optimized at all. The "terminal" state must be included within the sequence.
+                state,action = actionSequence[i]
+                newState,newAc = actionSequence[i+1]    # 1-step
+                reward,done,info = self.evaluateState(newState,self.N,g,self.maxReward,self.minReward)
+                CurrSeq.append((state,action,g,reward,newState))
+            # But terminal states shouldn't be used for q learning.
+            NewSeqs.append(CurrSeq)
+        return NewSeqs
         
     
     # Used for Supervised Learning Training
-    def getQMatrix(self,gamma):
+    def getVMatrix(self,gamma):
         matrixDim = [self.N]*self.K
         resMatrix = np.zeros(matrixDim)
         
