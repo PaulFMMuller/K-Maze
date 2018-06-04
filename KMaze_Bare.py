@@ -113,17 +113,14 @@ class KMaze_Bare:
     
     
     def seq2SeqNR(self,actionSequence):
-        K = 2*self.K-1
+        K = 2*self.K
         NewSeqs = []
         for g in range(K):
-            CurrSeq = []
-            for i in range(len(actionSequence)-1):    # Not optimized at all. The "terminal" state must be included within the sequence.
-                state,action = actionSequence[i]
-                newState,newAc = actionSequence[i+1]    # 1-step
+            for i in range(len(actionSequence)):    # Not optimized.
+                state,action,newState = actionSequence[i]
                 reward,done,info = self.evaluateState(newState,self.N,g,self.maxReward,self.minReward)
-                CurrSeq.append((state,action,g,reward,newState))
+                NewSeqs.append((state,action,g,reward,newState))
             # But terminal states shouldn't be used for q learning.
-            NewSeqs.append(CurrSeq)
         return NewSeqs
         
     

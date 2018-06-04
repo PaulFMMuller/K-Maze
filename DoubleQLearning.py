@@ -9,11 +9,11 @@ from UQFA import UQFA,zeroValue
 import numpy as np
 
 
-class doubleQLearning:
+class DoubleQLearning:
     
     def __init__(self,stateShape,actionShape,goalShape,possibleActions,\
                  n_layers_state=3,hidden_size=3,n_layers_tot=1,learning_rate=0.001,\
-                 epsilon = 0.01,switchCount=500,gamma=0.99):
+                 epsilon = 0.01,switchCount=500,gamma=0.99,batch_size=32):
         
         self.activeNetwork = UQFA(stateShape,actionShape,goalShape,n_layers_state,hidden_size,n_layers_tot,learning_rate)
         self.targetNetwork = zeroValue()
@@ -21,6 +21,7 @@ class doubleQLearning:
         self.switchCount   = switchCount
         self.possibleActions = possibleActions
         self.gamma         = gamma
+        self.batch_size    = batch_size 
     
     
     def predict(self,state,action,goal):
@@ -28,48 +29,42 @@ class doubleQLearning:
     
     
     def generateTargets(self,sequences,gamma):
-        states  = []
-        actions = []
-        goals   = []
-        targets = []
+        states   = np.array(list(sequences[:,0]))
+        action   = np.array(list(sequences[:,1]))
+        goal     = np.array(list(sequences[:,2]))
+        reward   = np.array(list(sequences[:,3]))
+        newState = np.array(list(sequences[:,4]))
+
+        maxAc,newQ = self.getBestAction(newState,goal,False)
+        targets = reward+gamma*newQ
         
-        for i in range(len(sequences)):
-            currSeq = sequences[i]
-            for j in range(len(currSeq)):
-                currState,currAction,currGoal,currReward,newState = currSeq[j]
-                maxAc,newQ = self.getBestAction(newState,currGoal,False)
-                states.append(currState); actions.append(currAction); goals.append(currGoal)
-                targets.append(currReward+gamma*newQ)
-        
-        states  = np.array(states)
-        actions = np.array(actions)
-        goals   = np.array(goals)
-        targets = np.array(targets)
-        return states,actions,goals,targets
+        return states,action,goal,targets
     
     
     def getBestAction(self,state,goal,realEval=True):
-        maxValue  = -np.inf
-        maxAction = -1
         if realEval:
             network = self.activeNetwork
         else:
             network = self.targetNetwork
 
+        maxValue  = -np.inf * np.ones(state.shape[0])
+        maxAction = -1 * np.ones(state.shape[0]).astype(int)
+    
         for action in self.possibleActions:
-            tempVal = network.predict(state,action,goal)
-            if tempVal > maxValue:
-                maxValue  = tempVal
-                maxAction = action
+            tempVals = network.predict(state,np.array([action]*len(maxValue)),goal).reshape(-1,)
+            booleans = tempVals > maxValue
+            
+            maxValue[booleans] = tempVals[booleans]
+            maxAction[booleans] = action
                 
         return maxAction,maxValue
         
         
     def fit(self,sequences,epochs):
         states,actions,goals,targets = self.generateTargets(sequences,self.gamma)
-        doneEpochs = min(epochs-self.count,self.switchCount-self.count)
+        doneEpochs = min(epochs,self.switchCount-self.count)
         
-        self.activeNetwork.fit(states,actions,goals,targets,doneEpochs)
+        self.activeNetwork.fit(states,actions.reshape(-1,1),goals.reshape(-1,1),targets.reshape(-1,1),doneEpochs,self.batch_size)
         self.count += doneEpochs
         
         if self.count >= self.switchCount:

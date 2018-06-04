@@ -24,8 +24,8 @@ class UQFA:
         
         
     # We assume here that all gs are different.
-    def fit(self,states,actions,goals,targets,n_epochs=1):
-        self.neuralNetwork.fit([states,actions,goals],targets,n_epochs=n_epochs)
+    def fit(self,states,actions,goals,targets,n_epochs=1,batch_size=32):
+        self.neuralNetwork.fit([states,actions,goals],targets,epochs=n_epochs,batch_size=batch_size)
 
 
     def createNeuralNetwork(self,stateShape,actionShape,goalShape,n_layers_state,hidden_size,n_layers_tot,learning_rate):
@@ -49,14 +49,14 @@ class UQFA:
                 lastState = hSA                 # ResNet
         oSA  = Dense(hidden_size,activation='relu')(hSA)
         
-        hFin = Concatenate([oSA,inputGoal])
+        hFin = Concatenate()([oSA,inputGoal])
         for i in range(n_layers_tot):
             hFin = Dense(hidden_size+goalShape,activation='relu')(hFin)
-        hFin = Dense(1,activation='linear')
+        hFin = Dense(1,activation='linear')(hFin)
         
         modele = Model(inputs=[inputState,inputAction,inputGoal],outputs=hFin)
         OPT = RMSprop(lr=learning_rate)
-        modele.compile(optimizer=OPT,loss='mean_squared_error',metric='mean_squared_error')
+        modele.compile(optimizer=OPT,loss='mean_squared_error',metrics=['mean_squared_error'])
         return modele
         
     
@@ -72,16 +72,16 @@ class UQFA:
         self.neuralNetwork = load_model(filepath)
     
     def staticLoad(filepath):
-        res = UQFA(0,0,0)
+        res = UQFA(1,1,1)
         res.load(filepath)
         return res
     
     
 class zeroValue:
-    def __init__():
+    def __init__(self):
         pass
     
-    def predict(states,actions,goals):
+    def predict(self,states,actions,goals):
         return np.zeros(states.shape[0])
     
     
